@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EDN — Suivi des 367 Items</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f9fc;
+    --surface: #ffffff;
+    --surface2: #f1f4f9;
+    --border: #e2e8f0;
+    --accent: #2563eb;
+    --accent2: #7c3aed;
+    --green: #059669;
+    --yellow: #d97706;
+    --red: #dc2626;
+    --text: #1e293b;
+    --muted: #94a3b8;
+    --subtle: #64748b;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #f8f9fc 0%, #eef2ff 50%, #f8f9fc 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 2.5rem 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .title-block h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .title-block h1 span {
+    color: var(--accent);
+  }
+
+  .title-block p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-family: 'DM Mono', monospace;
+    border: 1px solid;
+    font-weight: 500;
+  }
+
+  .stat-chip.total { border-color: var(--border); background: var(--surface); color: var(--subtle); }
+  .stat-chip.done { border-color: #6ee7b7; background: #ecfdf5; color: var(--green); }
+  .stat-chip.inprog { border-color: #fcd34d; background: #fffbeb; color: var(--yellow); }
+  .stat-chip.todo { border-color: #c4b5fd; background: #f5f3ff; color: var(--accent2); }
+
+  .stat-chip .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .done .dot { background: var(--green); }
+  .inprog .dot { background: var(--yellow); }
+  .todo .dot { background: var(--accent2); }
+  .total .dot { background: var(--muted); }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .progress-bar-outer {
+    flex: 1;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 999px;
+    overflow: hidden;
+    max-width: 500px;
+  }
+
+  .progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 999px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--subtle);
+    white-space: nowrap;
+  }
+
+  /* CONTROLS */
+  .controls {
+    padding: 1rem 2.5rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--muted); }
+
+  .filter-group {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--subtle);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filter-btn.active-green { background: var(--green); border-color: var(--green); color: #022c22; }
+  .filter-btn.active-yellow { background: var(--yellow); border-color: var(--yellow); color: #1c0a00; }
+  .filter-btn.active-purple { background: var(--accent2); border-color: var(--accent2); color: #0f0d20; }
+
+  .reset-btn {
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--red);
+    background: transparent;
+    color: var(--red);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: auto;
+  }
+
+  .reset-btn:hover { background: var(--red); color: #fff; }
+
+  /* ITEM LIST */
+  main {
+    padding: 1.5rem 2.5rem 3rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .results-info {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 1rem;
+  }
+
+  .items-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .item-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    transition: all 0.15s;
+    cursor: default;
+    position: relative;
+  }
+
+  .item-card:hover {
+    border-color: #3a4060;
+    background: #1a1e2a;
+  }
+
+  .item-card.status-maitrise {
+    border-left: 3px solid var(--green);
+  }
+
+  .item-card.status-en-cours {
+    border-left: 3px solid var(--yellow);
+  }
+
+  .item-card.status-non-fait {
+    border-left: 3px solid transparent;
+  }
+
+  .item-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    min-width: 32px;
+    padding-top: 2px;
+    user-select: none;
+  }
+
+  .item-name {
+    flex: 1;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .item-card.status-maitrise .item-name {
+    color: var(--subtle);
+    text-decoration: line-through;
+    text-decoration-color: #065f46;
+  }
+
+  /* STATUS BUTTONS */
+  .status-buttons {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    align-items: center;
+  }
+
+  .status-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: all 0.12s;
+    flex-shrink: 0;
+  }
+
+  .status-btn:hover { transform: scale(1.1); }
+
+  .status-btn.btn-maitrise { border-color: #065f46; background: #022c22; color: var(--green); }
+  .status-btn.btn-maitrise:hover, .status-btn.btn-maitrise.active { background: var(--green); color: #022c22; border-color: var(--green); }
+
+  .status-btn.btn-encours { border-color: #78350f; background: #1c0a00; color: var(--yellow); }
+  .status-btn.btn-encours:hover, .status-btn.btn-encours.active { background: var(--yellow); color: #1c0a00; border-color: var(--yellow); }
+
+  .status-btn.btn-reset { border-color: #374151; background: transparent; color: var(--muted); }
+  .status-btn.btn-reset:hover { background: #374151; color: var(--text); }
+
+  /* NOTE */
+  .note-toggle {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: var(--muted);
+    transition: all 0.12s;
+    flex-shrink: 0;
+  }
+
+  .note-toggle:hover { border-color: var(--accent2); color: var(--accent2); }
+  .note-toggle.has-note { border-color: var(--accent2); color: var(--accent2); background: #1e1b4b; }
+
+  .note-area {
+    display: none;
+    margin-top: 0.6rem;
+    padding-left: calc(32px + 1rem);
+  }
+
+  .note-area.open { display: block; }
+
+  .note-area textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    resize: vertical;
+    min-height: 60px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .note-area textarea:focus { border-color: var(--accent2); }
+  .note-area textarea::placeholder { color: var(--muted); }
+
+  /* DATE badge */
+  .date-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    padding-top: 6px;
+    min-width: 55px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .empty svg { margin-bottom: 1rem; opacity: 0.3; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.82rem;
+    color: var(--subtle);
+    font-family: 'DM Mono', monospace;
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Export btn */
+  .export-btn {
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--subtle);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .export-btn:hover { border-color: var(--green); color: var(--green); }
+
+  @media (max-width: 600px) {
+    header, .controls, main { padding-left: 1rem; padding-right: 1rem; }
+    .title-block h1 { font-size: 1.4rem; }
+    .stats-bar { gap: 0.5rem; }
+    .stat-chip { font-size: 0.72rem; padding: 0.3rem 0.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="title-block">
+      <h1>EDN — <span>367 Items</span></h1>
+      <p>Suivi de progression · Externats Droit au Nœud</p>
+    </div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat-chip total"><span class="dot"></span><span id="stat-total">367 items</span></div>
+    <div class="stat-chip done"><span class="dot"></span><span id="stat-done">0 maîtrisés</span></div>
+    <div class="stat-chip inprog"><span class="dot"></span><span id="stat-inprog">0 en cours</span></div>
+    <div class="stat-chip todo"><span class="dot"></span><span id="stat-todo">367 à faire</span></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-bar-outer">
+      <div class="progress-bar-inner" id="progress-bar" style="width:0%"></div>
+    </div>
+    <span class="progress-pct" id="progress-pct">0 % maîtrisés</span>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+    </svg>
+    <input type="text" id="search" placeholder="Rechercher un item…" autocomplete="off">
+  </div>
+
+  <div class="filter-group">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">Tous</button>
+    <button class="filter-btn" data-filter="maitrise" onclick="setFilter('maitrise', this)">✓ Maîtrisé</button>
+    <button class="filter-btn" data-filter="en-cours" onclick="setFilter('en-cours', this)">~ En cours</button>
+    <button class="filter-btn" data-filter="non-fait" onclick="setFilter('non-fait', this)">○ À faire</button>
+  </div>
+
+  <button class="export-btn" onclick="exportData()">↓ Export JSON</button>
+  <button class="reset-btn" onclick="confirmReset()">✕ Réinitialiser</button>
+</div>
+
+<main>
+  <div class="results-info" id="results-info"></div>
+  <div class="items-grid" id="items-grid"></div>
+  <div class="empty" id="empty-state" style="display:none">
+    <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+    </svg>
+    <p>Aucun item trouvé.</p>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ITEMS = [{"id": 1, "nom": "La relation médecin-malade dans le cadre du colloque singulier ou au sein d'une équipe, le cas échéant pluriprofessionnelle. La communication avec le patient et son entourage. L'annonce d'une maladie grave ou létale ou d'un dommage associé aux soins. La formation du patient. La personnalisation de la prise en charge médicale."}, {"id": 2, "nom": "Les valeurs professionnelles du médecin et des autres professions de santé"}, {"id": 3, "nom": "Le raisonnement et la décision en médecine. La médecine fondée sur les preuves (Evidence Based Medicine, EBM). La décision médicale partagée. La controverse."}, {"id": 4, "nom": "Qualité et sécurité des soins. La sécurité du patient. La gestion des risques. Les événements indésirables associés aux soins (EIAS). Démarche qualité et évaluation des pratiques professionnelles"}, {"id": 5, "nom": "La gestion des erreurs et des plaintes ; l'aléa thérapeutique"}, {"id": 6, "nom": "L'organisation de l'exercice clinique et les méthodes qui permettent de sécuriser le parcours du patient"}, {"id": 7, "nom": "Les droits individuels et collectifs du patient"}, {"id": 8, "nom": "Les discriminations"}, {"id": 9, "nom": "Introduction à l’éthique médicale"}, {"id": 10, "nom": "Approches transversales du corps"}, {"id": 11, "nom": "Violences et santé."}, {"id": 12, "nom": "Violences sexuelles"}, {"id": 13, "nom": "Certificats médicaux. Décès et législation."}, {"id": 14, "nom": "La mort"}, {"id": 15, "nom": "Soins psychiatriques sans consentement"}, {"id": 16, "nom": "Organisation du système de soins. Sa régulation. Les indicateurs. Parcours de soins."}, {"id": 17, "nom": "Télémédecine, télésanté et téléservices en santé."}, {"id": 18, "nom": "Santé et numérique"}, {"id": 19, "nom": "La sécurité sociale. L'assurance maladie. Les assurances complémentaires. La complémentaire santé solidaire (CSS). La consommation médicale. Protection sociale. Consommation médicale et économie de la santé."}, {"id": 20, "nom": "La méthodologie de la recherche en santé"}, {"id": 21, "nom": "Mesure de l'état de santé de la population"}, {"id": 22, "nom": "Maladies rares"}, {"id": 23, "nom": "Grossesse normale"}, {"id": 24, "nom": "Principales complications de la grossesse"}, {"id": 25, "nom": "Grossesse extra-utérine"}, {"id": 26, "nom": "Douleur abdominale aiguë chez une femme enceinte"}, {"id": 27, "nom": "Prévention des risques fœtaux : infection, médicaments, toxiques, irradiation"}, {"id": 28, "nom": "Connaître les particularités de l'infection urinaire au cours de la grossesse"}, {"id": 29, "nom": "Connaître les principaux risques professionnels pour la maternité, liés au travail de la mère."}, {"id": 30, "nom": "Prématurité et retard de croissance intra-utérin : facteurs de risque et prévention"}, {"id": 31, "nom": "Accouchement, délivrance et suites de couches normales"}, {"id": 32, "nom": "Évaluation et soins du nouveau-né à terme"}, {"id": 33, "nom": "Allaitement maternel"}, {"id": 34, "nom": "Suites de couches pathologiques : pathologie maternelle dans les 40 jours"}, {"id": 35, "nom": "Anomalies du cycle menstruel. Métrorragies"}, {"id": 36, "nom": "Contraception"}, {"id": 37, "nom": "Interruption volontaire de grossesse"}, {"id": 38, "nom": "Infertilité du couple : conduite de la première consultation"}, {"id": 39, "nom": "Assistance médicale à la procréation : principaux aspects biologiques, médicaux et éthiques"}, {"id": 40, "nom": "Algies pelviennes chez la femme"}, {"id": 41, "nom": "Endométriose"}, {"id": 42, "nom": "Aménorrhée"}, {"id": 43, "nom": "Hémorragie génitale chez la femme"}, {"id": 44, "nom": "Tuméfaction pelvienne chez la femme"}, {"id": 45, "nom": "Spécificités des maladies génétiques"}, {"id": 46, "nom": "Médecine génomique"}, {"id": 47, "nom": "Suivi d'un nourrisson, d'un enfant et d'un adolescent normal. Dépistage des anomalies orthopédiques, des troubles visuels, auditifs et dentaires. Examens de santé obligatoires. Médecine scolaire. Mortalité et morbidité infantiles."}, {"id": 48, "nom": "Alimentation et besoins nutritionnels du nourrisson et de l'enfant"}, {"id": 49, "nom": "Puberté normale et pathologique"}, {"id": 50, "nom": "Pathologie génito-scrotale chez le garçon et chez l'homme"}, {"id": 51, "nom": "Troubles de la miction chez l'enfant"}, {"id": 52, "nom": "Strabisme et amblyopie de l'enfant"}, {"id": 53, "nom": "Retard de croissance staturo-pondérale"}, {"id": 54, "nom": "Boiterie chez l'enfant"}, {"id": 55, "nom": "Développement psychomoteur du nourrisson et de l'enfant"}, {"id": 56, "nom": "L'enfant handicapé : orientation et prise en charge"}, {"id": 57, "nom": "Maltraitance et enfants en danger. Protection maternelle et infantile"}, {"id": 58, "nom": "Sexualité normale et ses troubles"}, {"id": 59, "nom": "Sujets en situation de précarité"}, {"id": 60, "nom": "Connaître les facteurs de risque, prévention, dépistage des troubles psychiques de l'enfant à la personne âgée"}, {"id": 61, "nom": "Connaître les bases des classifications des troubles mentaux de l'enfant à la personne âgée"}, {"id": 62, "nom": "Décrire l'organisation de l'offre de soins en psychiatrie, de l'enfant à la personne âgée"}, {"id": 63, "nom": "Trouble schizophrénique"}, {"id": 64, "nom": "Trouble bipolaire"}, {"id": 65, "nom": "Trouble délirant persistant"}, {"id": 66, "nom": "Diagnostiquer : un trouble dépressif, un trouble anxieux généralisé, un trouble panique, un trouble phobique, un trouble obsessionnel compulsif, un état de stress post-traumatique, un trouble de l'adaptation (de l'enfant à la personne âgée), un trouble de la personnalité."}, {"id": 67, "nom": "Troubles envahissants du développement"}, {"id": 68, "nom": "Troubles du comportement de l'adolescent"}, {"id": 69, "nom": "Troubles psychiques de la grossesse et du post-partum"}, {"id": 70, "nom": "Troubles psychiques du sujet âgé"}, {"id": 71, "nom": "Troubles des conduites alimentaires chez l'adolescent et l'adulte"}, {"id": 72, "nom": "Troubles à symptomatologie somatique et apparentés à tous les âges"}, {"id": 73, "nom": "Différents types de techniques psychothérapeutiques"}, {"id": 74, "nom": "Prescription et surveillance des psychotropes"}, {"id": 75, "nom": "Addiction au tabac."}, {"id": 76, "nom": "Addiction à l'alcool."}, {"id": 77, "nom": "Addiction aux médicaments psychotropes (benzodiazépines et apparentés)"}, {"id": 78, "nom": "Addiction au cannabis, à la cocaïne, aux amphétamines, aux opiacés, aux drogues de synthèse"}, {"id": 79, "nom": "Addictions comportementales"}, {"id": 80, "nom": "Dopage et conduites dopantes"}, {"id": 81, "nom": "Altération chronique de la vision"}, {"id": 82, "nom": "Altération aiguë de la vision"}, {"id": 83, "nom": "Infections et inflammations oculaires"}, {"id": 84, "nom": "Glaucomes"}, {"id": 85, "nom": "Troubles de la réfraction"}, {"id": 86, "nom": "Pathologie des paupières"}, {"id": 87, "nom": "Epistaxis"}, {"id": 88, "nom": "Trouble aigu de la parole. Dysphonie"}, {"id": 89, "nom": "Altération de la fonction auditive"}, {"id": 90, "nom": "Pathologie des glandes salivaires"}, {"id": 91, "nom": "Déficit neurologique récent"}, {"id": 92, "nom": "Déficit moteur et/ou sensitif des membres"}, {"id": 93, "nom": "Compression médullaire non traumatique et syndrome de la queue de cheval"}, {"id": 94, "nom": "Rachialgie"}, {"id": 95, "nom": "Radiculalgie et syndrome canalaire"}, {"id": 96, "nom": "Neuropathies périphériques"}, {"id": 97, "nom": "Polyradiculonévrite aiguë inflammatoire (syndrome de Guillain-Barré)"}, {"id": 98, "nom": "Myasthénie"}, {"id": 99, "nom": "Migraine, névralgie du trijumeau et algies de la face"}, {"id": 100, "nom": "Céphalée inhabituelle aiguë et chronique chez l'adulte et l'enfant"}, {"id": 101, "nom": "Paralysie faciale"}, {"id": 102, "nom": "Diplopie"}, {"id": 103, "nom": "Vertige"}, {"id": 104, "nom": "Sclérose en plaques"}, {"id": 105, "nom": "Épilepsie de l'enfant et de l'adulte"}, {"id": 106, "nom": "Maladie de Parkinson"}, {"id": 107, "nom": "Mouvements anormaux"}, {"id": 108, "nom": "Confusion, démences"}, {"id": 109, "nom": "Troubles de la marche et de l'équilibre"}, {"id": 110, "nom": "Troubles du sommeil de l'enfant et de l'adulte"}, {"id": 111, "nom": "Dermatoses faciales : acné, rosacée, dermatite séborrhéique"}, {"id": 112, "nom": "Dermatose bulleuse touchant la peau et/ou les muqueuses externes"}, {"id": 113, "nom": "Hémangiomes et malformations vasculaires cutanées"}, {"id": 114, "nom": "Exanthème et érythrodermie de l'adulte et de l'enfant"}, {"id": 115, "nom": "Toxidermies"}, {"id": 116, "nom": "Prurit"}, {"id": 117, "nom": "Psoriasis"}, {"id": 118, "nom": "La personne handicapée : bases de l'évaluation fonctionnelle et thérapeutique"}, {"id": 119, "nom": "Soin et accompagnement dans la maladie chronique et le handicap"}, {"id": 120, "nom": "Complications de l'immobilité et du décubitus. Prévention et prise en charge"}, {"id": 121, "nom": "Le handicap psychique"}, {"id": 122, "nom": "Principales techniques de rééducation et de réadaptation"}, {"id": 123, "nom": "Vieillissement normal : aspects biologiques, fonctionnels et relationnels. Données épidémiologiques et sociologiques. Prévention du vieillissement pathologique"}, {"id": 124, "nom": "Ménopause, insuffisance ovarienne prématurée, andropause, déficit androgénique lié à l’âge"}, {"id": 125, "nom": "Troubles de la miction et incontinence urinaire de l'adulte et du sujet âgé"}, {"id": 126, "nom": "Trouble de l'érection"}, {"id": 127, "nom": "Hypertrophie bénigne de la prostate"}, {"id": 128, "nom": "Ostéopathies fragilisantes"}, {"id": 129, "nom": "Arthrose"}, {"id": 130, "nom": "La personne âgée malade : particularités sémiologiques, psychologiques et thérapeutiques"}, {"id": 131, "nom": "Troubles de la marche et de l'équilibre"}, {"id": 132, "nom": "Troubles cognitifs du sujet âgé"}, {"id": 133, "nom": "Autonomie et dépendance chez le sujet âgé"}, {"id": 134, "nom": "Bases neurophysiologiques, mécanismes physiopathologiques d'une douleur aiguë et d'une douleur chronique"}, {"id": 135, "nom": "Thérapeutiques antalgiques, médicamenteuses et non médicamenteuses"}, {"id": 136, "nom": "Anesthésie locale, locorégionale et générale"}, {"id": 137, "nom": "Douleur chez l'enfant : évaluation et traitements antalgiques"}, {"id": 138, "nom": "Douleur chez la personne vulnérable"}, {"id": 139, "nom": "Soins palliatifs pluridisciplinaires chez un malade en phase palliative ou terminale d'une maladie grave, chronique ou létale (1). Principaux repères cliniques. Modalités d'organisation des équipes, en établissement de santé et en et en ambulatoire"}, {"id": 140, "nom": "Soins palliatifs pluridisciplinaires chez un malade en phase palliative ou terminale d'une maladie grave, chronique ou létale (2). Accompagnement de la personne malade et de son entourage. Principaux repères éthiques."}, {"id": 141, "nom": "Soins palliatifs pluridisciplinaires chez un malade en phase palliative ou terminale d'une maladie grave, chronique ou létale (3). La sédation pour détresse en phase terminale et dans des situations spécifiques et complexes en fin de vie. Réponse à la demande d'euthanasie ou de suicide assisté."}, {"id": 142, "nom": "Connaître les aspects spécifiques des soins palliatifs en pédiatrie"}, {"id": 143, "nom": "Connaître les aspects spécifiques des soins palliatifs en réanimation"}, {"id": 144, "nom": "Deuil normal et pathologique"}, {"id": 145, "nom": "Surveillance des maladies infectieuses transmissibles"}, {"id": 146, "nom": "Vaccinations"}, {"id": 147, "nom": "Fièvre aiguë chez l'enfant et l'adulte"}, {"id": 148, "nom": "Infections naso-sinusiennes de l'adulte et de l'enfant"}, {"id": 149, "nom": "Angines de l'adulte et de l'enfant et rhinopharyngites de l'enfant"}, {"id": 150, "nom": "Otites infectieuses de l'adulte et de l'enfant"}, {"id": 151, "nom": "Méningites, méningoencéphalites, abcès cérébral chez l'adulte et l'enfant"}, {"id": 152, "nom": "Endocardite infectieuse"}, {"id": 153, "nom": "Surveillance des porteurs de valve et prothèses vasculaires"}, {"id": 154, "nom": "Infections broncho pulmonaires communautaires de l'adulte et de l'enfant"}, {"id": 155, "nom": "Infections cutanéo-muqueuses et des phanères, bactériennes et mycosiques de l'adulte et de l'enfant"}, {"id": 156, "nom": "Infections ostéo articulaires (IOA) de l'enfant et de l'adulte"}, {"id": 157, "nom": "Septicémie/Bactériémie/Fongémie de l'adulte et de l'enfant"}, {"id": 158, "nom": "Sepsis et choc septique de l’enfant et de l’adulte"}, {"id": 159, "nom": "Tuberculose de l'adulte et de l'enfant"}, {"id": 160, "nom": "Tétanos"}, {"id": 161, "nom": "Infections urinaires de l'enfant et de l'adulte"}, {"id": 162, "nom": "Infections sexuellement transmissibles (IST) : gonococcies, chlamydioses, syphilis, papillomavirus humain (HPV), trichomonose"}, {"id": 163, "nom": "Coqueluche"}, {"id": 164, "nom": "Exanthèmes fébriles de l'enfant"}, {"id": 165, "nom": "Oreillons"}, {"id": 166, "nom": "Grippe"}, {"id": 167, "nom": "Hépatites virales"}, {"id": 168, "nom": "Infections à herpès virus du sujet immunocompétent"}, {"id": 169, "nom": "Infections à VIH"}, {"id": 170, "nom": "Paludisme"}, {"id": 171, "nom": "Gale et pédiculose"}, {"id": 172, "nom": "Parasitoses digestives : giardiose, amoebose, téniasis, ascaridiose, oxyurose, anguillulose, cryptosporidiose."}, {"id": 173, "nom": "Zoonoses"}, {"id": 174, "nom": "Pathologie infectieuse chez les migrants adultes et enfants"}, {"id": 175, "nom": "Voyage en pays tropical de l'adulte et de l'enfant : conseils avant le départ, pathologies du retour : fièvre, diarrhée, manifestations cutanées"}, {"id": 176, "nom": "Diarrhées infectieuses de l'adulte et de l'enfant"}, {"id": 177, "nom": "Prescription et surveillance des anti-infectieux chez l'adulte et l'enfant"}, {"id": 178, "nom": "Risques émergents, bioterrorisme, maladies hautement transmissibles"}, {"id": 179, "nom": "Risques sanitaires liés à l'eau et à l'alimentation. Toxi-infections alimentaires"}, {"id": 180, "nom": "Risques sanitaires liés aux irradiations. Radioprotection"}, {"id": 181, "nom": "La sécurité sanitaire des produits destinés à l'homme. La veille sanitaire"}, {"id": 182, "nom": "Environnement professionnel et santé au travail"}, {"id": 183, "nom": "Organisation de la médecine du travail. Prévention des risques professionnels"}, {"id": 184, "nom": "Accidents du travail et maladies professionnelles : définitions et enjeux"}, {"id": 185, "nom": "Réaction inflammatoire : aspects biologiques et cliniques. Conduite à tenir"}, {"id": 186, "nom": "Hypersensibilités et allergies chez l'enfant et l'adulte : aspects physiopathologiques, épidémiologiques, diagnostiques et principes de traitement"}, {"id": 187, "nom": "Hypersensibilités et allergies cutanéomuqueuses chez l'enfant et l'adulte. Urticaire, dermatites atopique et de contact, conjonctivite allergique."}, {"id": 188, "nom": "Hypersensibilité et allergies respiratoires chez l'enfant et chez l'adulte. Asthme, rhinite"}, {"id": 189, "nom": "Déficit immunitaire"}, {"id": 190, "nom": "Fièvre prolongée"}, {"id": 191, "nom": "Fièvre chez un patient immunodéprimé"}, {"id": 192, "nom": "Pathologies auto-immunes : aspects épidémiologiques, diagnostiques et principes de traitement"}, {"id": 193, "nom": "Connaître les principaux types de vascularite systémique, les organes cibles, les outils diagnostiques et les moyens thérapeutiques"}, {"id": 194, "nom": "Lupus systémique. Syndrome des anti-phospholipides (SAPL)"}, {"id": 195, "nom": "Artérite à cellules géantes"}, {"id": 196, "nom": "Polyarthrite rhumatoïde"}, {"id": 197, "nom": "Spondyloarthrite"}, {"id": 198, "nom": "Arthropathie microcristalline"}, {"id": 199, "nom": "Syndrome douloureux régional complexe (ex algodystrophie)"}, {"id": 200, "nom": "Douleur et épanchement articulaire. Arthrite d'évolution récente"}, {"id": 201, "nom": "Transplantation d'organes : aspects épidémiologiques et immunologiques ; principes de traitement; complications et pronostic ; aspects éthiques et légaux. Prélèvements d'organes et législation."}, {"id": 202, "nom": "Biothérapies et thérapies ciblées"}, {"id": 203, "nom": "Dyspnée aiguë et chronique"}, {"id": 204, "nom": "Toux chez l'enfant et chez l'adulte (avec le traitement)"}, {"id": 205, "nom": "Hémoptysie"}, {"id": 206, "nom": "Épanchement pleural liquidien"}, {"id": 207, "nom": "Opacités et masses intra-thoraciques chez l'enfant et chez l'adulte"}, {"id": 208, "nom": "Insuffisance respiratoire chronique"}, {"id": 209, "nom": "Bronchopneumopathie chronique obstructive chez l'adulte"}, {"id": 210, "nom": "Pneumopathie interstitielle diffuse"}, {"id": 211, "nom": "Sarcoïdose"}, {"id": 212, "nom": "Hémogramme chez l'adulte et l'enfant : indications et interprétation"}, {"id": 213, "nom": "Anémie chez l'adulte et l'enfant"}, {"id": 214, "nom": "Thrombopénie chez l'adulte et l'enfant"}, {"id": 215, "nom": "Purpuras chez l'adulte et l'enfant"}, {"id": 216, "nom": "Syndrome hémorragique d'origine hématologique"}, {"id": 217, "nom": "Syndrome mononucléosique"}, {"id": 218, "nom": "Éosinophilie"}, {"id": 219, "nom": "Pathologie du fer chez l'adulte et l'enfant"}, {"id": 220, "nom": "Adénopathie superficielle de l'adulte et de l'enfant"}, {"id": 221, "nom": "Athérome : épidémiologie et physiopathologie. Le malade poly-athéromateux"}, {"id": 222, "nom": "Facteurs de risque cardio-vasculaire et prévention"}, {"id": 223, "nom": "Dyslipidémies"}, {"id": 224, "nom": "Hypertension artérielle de l'adulte et de l’enfant"}, {"id": 225, "nom": "Artériopathie oblitérante de l'aorte, des artères viscérales et des membres inférieurs ; anévrysmes"}, {"id": 226, "nom": "Thrombose veineuse profonde et embolie pulmonaire"}, {"id": 227, "nom": "Insuffisance veineuse chronique. Varices"}, {"id": 228, "nom": "Ulcère de jambe"}, {"id": 229, "nom": "Surveillance et complications des abords veineux"}, {"id": 230, "nom": "Douleur thoracique aiguë"}, {"id": 231, "nom": "Électrocardiogramme : indications et interprétations"}, {"id": 232, "nom": "Fibrillation atriale"}, {"id": 233, "nom": "Valvulopathies"}, {"id": 234, "nom": "Insuffisance cardiaque de l'adulte"}, {"id": 235, "nom": "Péricardite aiguë"}, {"id": 236, "nom": "Troubles de la conduction intracardiaque"}, {"id": 237, "nom": "Palpitations"}, {"id": 238, "nom": "Souffle cardiaque chez l'enfant"}, {"id": 239, "nom": "Acrosyndromes (phénomène de Raynaud, érythermalgie, acrocyanose, engelures, ischémie digitale)"}, {"id": 240, "nom": "Hypoglycémie chez l'adulte et l'enfant"}, {"id": 241, "nom": "Goitre, nodules thyroïdiens et cancers thyroïdiens"}, {"id": 242, "nom": "Hyperthyroïdie"}, {"id": 243, "nom": "Hypothyroïdie"}, {"id": 244, "nom": "Adénome hypophysaire"}, {"id": 245, "nom": "Insuffisance surrénale chez l'adulte et l'enfant"}, {"id": 246, "nom": "Gynécomastie"}, {"id": 247, "nom": "Diabète sucré de types 1 et 2 de l'enfant et de l'adulte. Complications"}, {"id": 248, "nom": "Prévention primaire par la nutrition chez l'adulte et chez l'enfant"}, {"id": 249, "nom": "Modifications thérapeutiques du mode de vie (alimentation et activité physique) chez l'adulte et l'enfant"}, {"id": 250, "nom": "Dénutrition chez l'adulte et l'enfant"}, {"id": 251, "nom": "Amaigrissement à tous les âges"}, {"id": 252, "nom": "Troubles nutritionnels chez le sujet âgé"}, {"id": 253, "nom": "Obésité de l'enfant et de l'adulte"}, {"id": 254, "nom": "Besoins nutritionnels et grossesse"}, {"id": 255, "nom": "Diabète gestationnel"}, {"id": 256, "nom": "Aptitude au sport chez l'adulte et l'enfant ; besoins nutritionnels chez le sportif"}, {"id": 257, "nom": "Œdèmes des membres inférieurs localisés ou généralisés"}, {"id": 258, "nom": "Élévation de la créatininémie"}, {"id": 259, "nom": "Protéinurie et syndrome néphrotique de chez l'l'adulte et de l'enfant"}, {"id": 260, "nom": "Hématurie"}, {"id": 261, "nom": "Néphropathie glomérulaire"}, {"id": 262, "nom": "Néphropathies interstitielles"}, {"id": 263, "nom": "Néphropathies vasculaires"}, {"id": 264, "nom": "Insuffisance rénale chronique chez l'adulte et l'enfant"}, {"id": 265, "nom": "Lithiase urinaire"}, {"id": 266, "nom": "Polykystose rénale"}, {"id": 267, "nom": "Troubles de l'équilibre acido-basique et désordres hydro-électrolytiques"}, {"id": 268, "nom": "Hypercalcémie"}, {"id": 269, "nom": "Douleurs abdominales aiguës chez l'enfant et chez l'adulte"}, {"id": 270, "nom": "Douleurs lombaires aiguës chez l'enfant et chez l'adulte"}, {"id": 271, "nom": "Reflux gastro-œsophagien chez le nourrisson, chez l'enfant et chez l'adulte. Hernie hiatale"}, {"id": 272, "nom": "Ulcère gastrique et duodénal. Gastrite"}, {"id": 273, "nom": "Dysphagie"}, {"id": 274, "nom": "Vomissements du nourrisson, de l'enfant et de l'adulte"}, {"id": 275, "nom": "Splénomégalie"}, {"id": 276, "nom": "Hépatomégalie et masse abdominale"}, {"id": 277, "nom": "Lithiase biliaire et complications"}, {"id": 278, "nom": "Ictère"}, {"id": 279, "nom": "Cirrhose et complications"}, {"id": 280, "nom": "Ascite"}, {"id": 281, "nom": "Pancréatite chronique"}, {"id": 282, "nom": "Maladies Inflammatoires Chroniques de l'Intestin (MICI) chez l'adulte"}, {"id": 283, "nom": "Constipation chez l'enfant et l'adulte (avec le traitement)"}, {"id": 284, "nom": "Colopathie fonctionnelle"}, {"id": 285, "nom": "Diarrhée chronique chez l'adulte et l'enfant"}, {"id": 286, "nom": "Diarrhée aiguë et déshydratation chez le nourrisson, l'enfant et l'adulte"}, {"id": 287, "nom": "Diverticulose colique et diverticulite aiguë du sigmoïde"}, {"id": 288, "nom": "Pathologie hémorroïdaire"}, {"id": 289, "nom": "Hernie pariétale chez l'enfant et l'adulte"}, {"id": 290, "nom": "Épidémiologie, facteurs de risque, prévention et dépistage des cancers"}, {"id": 291, "nom": "Cancer : cancérogénèse, oncogénétique"}, {"id": 292, "nom": "Diagnostic des cancers : signes d'appel et investigations para-cliniques ; caractérisation du stade ; pronostic"}, {"id": 293, "nom": "Le médecin préleveur de cellules et/ou de tissus pour des examens d'Anatomie et Cytologie Pathologiques : connaître les principes de réalisation, transmission et utilisation des prélèvements à visée sanitaire et de recherche"}, {"id": 294, "nom": "Traitement des cancers : principales modalités, classes thérapeutiques et leurs complications majeures. La décision thérapeutique pluridisciplinaire et l'information du malade"}, {"id": 295, "nom": "Prise en charge et accompagnement d'un malade atteint de cancer à tous les stades de la maladie dont le stade de soins palliatifs en abordant les problématiques techniques, relationnelles, sociales et éthiques. Traitements symptomatiques. Modalités de surveillance."}, {"id": 296, "nom": "Agranulocytose médicamenteuse : conduite à tenir"}, {"id": 297, "nom": "Cancer de l'enfant : particularités épidémiologiques, diagnostiques et thérapeutiques"}, {"id": 298, "nom": "Tumeurs de la cavité buccale, naso-sinusiennes et du cavum, et des voies aérodigestives supérieures."}, {"id": 299, "nom": "Tumeurs intracrâniennes"}, {"id": 300, "nom": "Tumeurs du col utérin, tumeur du corps utérin"}, {"id": 301, "nom": "Tumeurs du colon et du rectum"}, {"id": 302, "nom": "Tumeurs cutanées, épithéliales et mélaniques"}, {"id": 303, "nom": "Tumeurs de l'estomac"}, {"id": 304, "nom": "Tumeurs du foie, primitives et secondaires"}, {"id": 305, "nom": "Tumeurs de l'œsophage"}, {"id": 306, "nom": "Tumeurs de l'ovaire"}, {"id": 307, "nom": "Tumeurs des os primitives et secondaires"}, {"id": 308, "nom": "Tumeurs du pancréas"}, {"id": 309, "nom": "Tumeurs du poumon, primitives et secondaires"}, {"id": 310, "nom": "Tumeurs de la prostate"}, {"id": 311, "nom": "Tumeurs du rein de l’adulte"}, {"id": 312, "nom": "Tumeurs du sein"}, {"id": 313, "nom": "Tumeurs du testicule"}, {"id": 314, "nom": "Tumeurs vésicales"}, {"id": 315, "nom": "Leucémies aiguës"}, {"id": 316, "nom": "Syndromes myélodysplasiques"}, {"id": 317, "nom": "Syndromes myéloprolifératifs"}, {"id": 318, "nom": "Leucémies lymphoïdes chroniques"}, {"id": 319, "nom": "Lymphomes malins"}, {"id": 320, "nom": "Myélome multiple des os"}, {"id": 321, "nom": "Principe du bon usage du médicament"}, {"id": 322, "nom": "La décision thérapeutique personnalisée : bon usage dans des situations à risque"}, {"id": 323, "nom": "Analyser et utiliser les résultats des études cliniques dans la perspective du bon usage - analyse critique, recherche clinique et niveaux de preuve."}, {"id": 324, "nom": "Éducation thérapeutique, observance et automédication"}, {"id": 325, "nom": "Identification et gestion des risques liés aux médicaments et aux biomatériaux, risque iatrogène, erreur médicamenteuse"}, {"id": 326, "nom": "Cadre réglementaire de la prescription thérapeutique et recommandations pour le bon usage"}, {"id": 327, "nom": "Principes de la médecine intégrative, utilité et risques des interventions non médicamenteuses et des thérapies complémentaires"}, {"id": 328, "nom": "Thérapeutiques non médicamenteuses et dispositifs médicaux"}, {"id": 329, "nom": "Transfusion sanguine et produits dérivés du sang : indications, complications. Hémovigilance"}, {"id": 330, "nom": "Prescription et surveillance des classes de médicaments les plus courantes chez l'adulte et chez l'enfant, hors anti-infectieux. Connaitre les grands principes thérapeutiques."}, {"id": 331, "nom": "Arrêt cardio-circulatoire"}, {"id": 332, "nom": "État de choc. Principales étiologies : hypovolémique, septique, cardiogénique, anaphylactique"}, {"id": 333, "nom": "Situations sanitaires exceptionnelles"}, {"id": 334, "nom": "Prise en charge immédiate pré-hospitalière et à l'arrivée à l'hôpital, évaluation des complications chez : un brûlé, un traumatisé sévère, un traumatisé thoracique, un traumatisé abdominal, un traumatisé des membres et/ou du bassin, un traumatisé du rachis ou vertébro-médullaire, un traumatisé crânien ou crânio-encéphalique"}, {"id": 335, "nom": "Orientation diagnostique et conduite à tenir devant un traumatisme maxillo-facial et oculaire"}, {"id": 336, "nom": "Coma non traumatique chez l'adulte et chez l'enfant"}, {"id": 337, "nom": "Principales intoxications aiguës"}, {"id": 338, "nom": "Œdème de Quincke et anaphylaxie"}, {"id": 339, "nom": "Syndromes coronariens aigus"}, {"id": 340, "nom": "Accidents vasculaires cérébraux"}, {"id": 341, "nom": "Hémorragie méningée"}, {"id": 342, "nom": "Malaise, perte de connaissance, crise convulsive chez l'adulte"}, {"id": 343, "nom": "État confusionnel et trouble de conscience chez l'adulte et chez l'enfant"}, {"id": 344, "nom": "Prise en charge d'une patiente atteinte de pré-éclampsie"}, {"id": 345, "nom": "Malaise grave du nourrisson et mort inattendue du nourrisson"}, {"id": 346, "nom": "Convulsions chez le nourrisson et chez l'enfant"}, {"id": 347, "nom": "Rétention aiguë d'urine"}, {"id": 348, "nom": "Insuffisance rénale aiguë - Anurie"}, {"id": 349, "nom": "Infection aiguë des parties molles (abcès, panaris, phlegmon des gaines)"}, {"id": 350, "nom": "Grosse jambe rouge aiguë"}, {"id": 351, "nom": "Agitation et délire aiguë"}, {"id": 352, "nom": "Crise d'angoisse aiguë et attaque de panique"}, {"id": 353, "nom": "Risque et conduite suicidaires chez l'enfant, l'adolescent et l'adulte : identification et prise en charge"}, {"id": 354, "nom": "Syndrome occlusif de l'enfant et de l'adulte"}, {"id": 355, "nom": "Hémorragie digestive"}, {"id": 356, "nom": "Appendicite de l'enfant et de l'adulte"}, {"id": 357, "nom": "Péritonite aiguë chez l'enfant et chez l'adulte"}, {"id": 358, "nom": "Pancréatite aiguë"}, {"id": 359, "nom": "Détresse et insuffisance respiratoire aigüe du nourrisson, de l'enfant et de l'adulte"}, {"id": 360, "nom": "Pneumothorax"}, {"id": 361, "nom": "Lésions péri-articulaires et ligamentaires du genou, de la cheville et de l'épaule"}, {"id": 362, "nom": "Prothèses et ostéosynthèses"}, {"id": 363, "nom": "Fractures fréquentes de l'adulte et du sujet âgé"}, {"id": 364, "nom": "Fractures chez l'enfant : particularités épidémiologiques, diagnostiques et thérapeutiques"}, {"id": 365, "nom": "Surveillance d'un malade sous plâtre/résine, diagnostiquer une complication"}, {"id": 366, "nom": "Exposition accidentelle aux liquides biologiques : conduite à tenir"}, {"id": 367, "nom": "Impact de l’environnement sur la santé."}];
+
+const STORAGE_KEY = 'edn_revisions_v2';
+
+// Load state
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch(e) { showToast('Erreur de sauvegarde'); }
+}
+
+let state = loadState();
+let currentFilter = 'all';
+let searchQuery = '';
+
+function getItemState(id) {
+  return state[id] || { status: 'non-fait', note: '', date: null };
+}
+
+function setItemStatus(id, status) {
+  const prev = getItemState(id);
+  if (prev.status === status) {
+    // Toggle off
+    state[id] = { ...prev, status: 'non-fait', date: null };
+  } else {
+    state[id] = { ...prev, status, date: status !== 'non-fait' ? new Date().toLocaleDateString('fr-FR') : null };
+  }
+  saveState();
+  updateStats();
+  updateCard(id);
+}
+
+function setItemNote(id, note) {
+  const prev = getItemState(id);
+  state[id] = { ...prev, note };
+  saveState();
+  // Update note toggle icon
+  const card = document.querySelector(`.item-card[data-id="${id}"]`);
+  if (card) {
+    const toggle = card.querySelector('.note-toggle');
+    if (note.trim()) toggle.classList.add('has-note');
+    else toggle.classList.remove('has-note');
+  }
+}
+
+function updateCard(id) {
+  const card = document.querySelector(`.item-card[data-id="${id}"]`);
+  if (!card) return;
+  const s = getItemState(id);
+  card.className = `item-card status-${s.status}`;
+
+  // Update buttons
+  card.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+  if (s.status === 'maitrise') card.querySelector('.btn-maitrise').classList.add('active');
+  if (s.status === 'en-cours') card.querySelector('.btn-encours').classList.add('active');
+
+  // Update date
+  const dateEl = card.querySelector('.date-badge');
+  if (dateEl) dateEl.textContent = s.date || '';
+
+  // Re-check visibility
+  const visible = isVisible(id, s);
+  card.style.display = visible ? 'flex' : 'none';
+}
+
+function isVisible(id, s) {
+  const item = ITEMS.find(i => i.id === id);
+  if (!item) return false;
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    if (!item.nom.toLowerCase().includes(q) && !String(item.id).includes(q)) return false;
+  }
+  if (currentFilter === 'all') return true;
+  return s.status === currentFilter;
+}
+
+function updateStats() {
+  let done = 0, inprog = 0;
+  ITEMS.forEach(item => {
+    const s = getItemState(item.id);
+    if (s.status === 'maitrise') done++;
+    else if (s.status === 'en-cours') inprog++;
+  });
+  const total = ITEMS.length;
+  const todo = total - done - inprog;
+  const pct = Math.round((done / total) * 100);
+
+  document.getElementById('stat-total').textContent = `${total} items`;
+  document.getElementById('stat-done').textContent = `${done} maîtrisé${done > 1 ? 's' : ''}`;
+  document.getElementById('stat-inprog').textContent = `${inprog} en cours`;
+  document.getElementById('stat-todo').textContent = `${todo} à faire`;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = `${pct} % maîtrisés`;
+}
+
+function renderAll() {
+  const grid = document.getElementById('items-grid');
+  grid.innerHTML = '';
+  let count = 0;
+
+  ITEMS.forEach(item => {
+    const s = getItemState(item.id);
+    const visible = isVisible(item.id, s);
+
+    const card = document.createElement('div');
+    card.className = `item-card status-${s.status}`;
+    card.dataset.id = item.id;
+    card.style.display = visible ? 'flex' : 'none';
+    card.style.flexDirection = 'column';
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:flex-start;gap:1rem;width:100%';
+
+    const hasNote = s.note && s.note.trim();
+
+    row.innerHTML = `
+      <span class="item-num">#${item.id}</span>
+      <span class="item-name">${escapeHtml(item.nom)}</span>
+      <span class="date-badge">${s.date || ''}</span>
+      <div class="status-buttons">
+        <button class="status-btn btn-maitrise ${s.status === 'maitrise' ? 'active' : ''}" 
+          title="Maîtrisé" onclick="setItemStatus(${item.id}, 'maitrise')">✓</button>
+        <button class="status-btn btn-encours ${s.status === 'en-cours' ? 'active' : ''}" 
+          title="En cours" onclick="setItemStatus(${item.id}, 'en-cours')">~</button>
+        <button class="note-toggle ${hasNote ? 'has-note' : ''}" 
+          title="Ajouter une note" onclick="toggleNote(${item.id}, this)">✎</button>
+      </div>
+    `;
+
+    const noteArea = document.createElement('div');
+    noteArea.className = 'note-area';
+    noteArea.id = `note-area-${item.id}`;
+    noteArea.innerHTML = `<textarea placeholder="Notes, ressources, difficultés…" 
+      onchange="setItemNote(${item.id}, this.value)"
+      oninput="setItemNote(${item.id}, this.value)">${escapeHtml(s.note || '')}</textarea>`;
+
+    card.appendChild(row);
+    card.appendChild(noteArea);
+    grid.appendChild(card);
+
+    if (visible) count++;
+  });
+
+  document.getElementById('results-info').textContent =
+    `Affichage de ${count} item${count > 1 ? 's' : ''} sur ${ITEMS.length}`;
+  document.getElementById('empty-state').style.display = count === 0 ? 'block' : 'none';
+}
+
+function toggleNote(id, btn) {
+  const area = document.getElementById(`note-area-${id}`);
+  if (area.classList.contains('open')) {
+    area.classList.remove('open');
+  } else {
+    area.classList.add('open');
+    area.querySelector('textarea').focus();
+  }
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.remove('active', 'active-green', 'active-yellow', 'active-purple');
+  });
+  if (filter === 'all') btn.classList.add('active');
+  else if (filter === 'maitrise') btn.classList.add('active-green');
+  else if (filter === 'en-cours') btn.classList.add('active-yellow');
+  else if (filter === 'non-fait') btn.classList.add('active-purple');
+  renderAll();
+}
+
+let searchTimeout;
+document.getElementById('search').addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    searchQuery = this.value.trim();
+    renderAll();
+  }, 150);
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function confirmReset() {
+  if (confirm('Réinitialiser toute la progression ? Cette action est irréversible.')) {
+    state = {};
+    saveState();
+    updateStats();
+    renderAll();
+    showToast('Progression réinitialisée');
+  }
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `edn_progression_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Export téléchargé');
+}
+
+// Init
+updateStats();
+renderAll();
+</script>
+</body>
+</html>
